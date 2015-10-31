@@ -1,0 +1,130 @@
+package com.android.test.login;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.Toast;
+
+import com.sqlite.DbHelper;
+
+public class Date extends Activity {
+	/** Called when the activity is first created. */
+	Button loginButton;
+	EditText namEditText;
+	EditText passwdEditText;
+	LoadSD loadSD = null;
+	Context mContext;
+	ImageButton imageButton;
+	ImageButton clearButton;
+	private DbHelper db;
+	private Cursor mCursor;
+	public final static String FIELD_ID = "_id";
+	public final static String FIELD_USERNAME = "username";
+	public final static String FIELD_PASSWORD = "password";
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.loginpage);
+		loginButton = (Button) findViewById(R.id.login_btn_login);
+		namEditText = (EditText) findViewById(R.id.login_edit_account);
+		passwdEditText = (EditText) findViewById(R.id.login_edit_pwd);
+		imageButton = (ImageButton) findViewById(R.id.spinner);
+		clearButton = (ImageButton) findViewById(R.id.login_option);
+		mContext = this;
+
+		db = new DbHelper(Date.this);
+		mCursor = db.select();
+		
+		if (mCursor.getCount() > 0) {
+			mCursor.moveToFirst();
+			while (!mCursor.isAfterLast()) {
+				Log.i("id", String.valueOf(mCursor.getString(0)));
+				Log.i("name", mCursor.getString(1));
+				Log.i("pass", mCursor.getString(2));
+				mCursor.moveToNext();
+			}
+		}
+
+		loginButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				// TODO Auto-generated method stub
+				String name = namEditText.getText().toString();
+				String passwd = passwdEditText.getText().toString();
+				// Toast.makeText(Date.this, name, Toast.LENGTH_SHORT).show();
+				mCursor = db.select();
+				if (mCursor.getCount() > 0) {
+					mCursor.moveToFirst();
+					db.update(mCursor.getInt(0), name, passwd);
+					ShowDialog("更新成功");
+				} else {
+					db.insert(name, passwd);
+					ShowDialog("保存成功");
+				}
+			
+			
+			}
+		});
+
+		imageButton.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				// TODO Auto-generated method stub
+				mCursor = db.select();
+				if (mCursor.getCount() > 0) {
+					mCursor.moveToFirst();
+					String name = null;
+					String passwd = null;
+					name = mCursor.getString(1);
+					passwd = mCursor.getString(2);
+					namEditText.setText(name);
+					passwdEditText.setText(passwd);
+				} else {
+					Toast.makeText(mContext, "数据库没数据", 500).show();
+					namEditText.setText("");
+					passwdEditText.setText("");
+				}
+			}
+		});
+		
+		clearButton.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				// TODO Auto-generated method stub
+				mCursor = db.select();
+				if (mCursor.getCount() > 0) {
+					mCursor.moveToFirst();
+					db.delete(mCursor.getInt(0));
+					namEditText.setText("");
+					passwdEditText.setText("");
+				}
+			}
+		});
+
+	}
+
+	public void ShowDialog(String str) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+		builder.setIcon(R.drawable.icon);
+		builder.setTitle(str);
+		builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				// finish();
+			}
+		});
+		builder.show();
+	}
+}
